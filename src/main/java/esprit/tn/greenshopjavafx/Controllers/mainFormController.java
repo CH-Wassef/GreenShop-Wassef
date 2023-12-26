@@ -232,6 +232,9 @@ public class mainFormController implements Initializable {
     //FOURNISSEUR
 
     @FXML
+    private AnchorPane fournisseurs_form;
+
+    @FXML
     private TableView<Fournisseur> fournisseur_tableView;
     @FXML
     private TableColumn<Fournisseur, Integer> fournisseur_col_id;
@@ -245,10 +248,13 @@ public class mainFormController implements Initializable {
     @FXML
     private TableColumn<Fournisseur, String> fournisseur_col_adresse;
     @FXML
-    private TableColumn<Fournisseur, Integer> fournisseur_phoneNumber;
+    private TableColumn<Fournisseur, Integer> fournisseur_col_phoneNumber;
 
     @FXML
     Button addButton;
+
+    @FXML
+    private Button deleteButton;
 
     @FXML
     private Button updateFournisseurButton;
@@ -1222,7 +1228,41 @@ public class mainFormController implements Initializable {
 
         customersShowData();
         stockShowData();
+
+        setupAddButton();
+        try {
+            setupfournisseurComboBox();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        fournisseur_col_id.setCellValueFactory(new PropertyValueFactory<>("id"));
+        fournisseur_col_nom.setCellValueFactory(new PropertyValueFactory<>("nom"));
+        fournisseur_col_prenom.setCellValueFactory(new PropertyValueFactory<>("prenom"));
+        fournisseur_col_email.setCellValueFactory(new PropertyValueFactory<>("email"));
+        fournisseur_col_adresse.setCellValueFactory(new PropertyValueFactory<>("adresse"));
+        fournisseur_col_phoneNumber.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
+
+        refreshTableView();
                 }
+
+
+    private void setupfournisseurComboBox() throws SQLException {
+        // Get the fournisseurs from the database
+        List<Fournisseur> fournisseurs = fournisseurService.readAll();
+
+        // Create a list of FournisseurItems from the fournisseurs
+        ObservableList<Fournisseur> fournisseurItems = FXCollections.observableArrayList();
+        for (Fournisseur fournisseur : fournisseurs) {
+            Fournisseur item = new Fournisseur(fournisseur.getId(), fournisseur.getNom(), fournisseur.getPrenom(), fournisseur.getEmail(), fournisseur.getAdresse(),fournisseur.getPhonenumber());
+            fournisseurItems.add(item);
+        }
+
+        // Set the items and prompt text for the ComboBox
+        fournisseurComboBox.setItems(fournisseurItems);
+        fournisseurComboBox.setPromptText("Sélectionner un fournisseur");
+    }
+
+
 
     //Bouton Ajout fournisseur
 

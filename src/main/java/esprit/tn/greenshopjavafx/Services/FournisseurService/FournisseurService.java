@@ -75,6 +75,26 @@ public class FournisseurService implements IService<Fournisseur> {
         return null;
     }
 
+    public ArrayList<Fournisseur> getAll() throws SQLException {
+        ArrayList<Fournisseur> fournisseurs = new ArrayList<>();
+        try {
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM fournisseur");
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String nom = resultSet.getString("nom");
+                String prenom = resultSet.getString("prenom");
+                String email = resultSet.getString("email");
+                String adresse = resultSet.getString("adresse");
+                int phoneNumber = resultSet.getInt("phonenumber");
+                Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phoneNumber);
+                fournisseurs.add(fournisseur);
+            }
+        } catch (SQLException ex) {
+            System.out.println(ex);
+        }
+        return fournisseurs;
+    }
+
     public Fournisseur consulter(String nom, String prenom) throws SQLException {
         String req = "SELECT * FROM fournisseur WHERE nom = ? AND prenom = ?";
         PreparedStatement preparedStatement = connnection.prepareStatement(req);
