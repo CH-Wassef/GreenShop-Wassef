@@ -27,6 +27,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
@@ -39,6 +40,7 @@ import java.net.URL;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperFillManager;
@@ -68,6 +70,10 @@ public class mainFormController implements Initializable {
     private Button customers_btn;
     @FXML
     private Button stock_btn;
+
+    @FXML
+    private Button fournisseur_btn;
+
 
 
     @FXML
@@ -176,6 +182,9 @@ public class mainFormController implements Initializable {
     private Button menu_receiptBtn;
 
     @FXML
+    private Button searchButton;
+
+    @FXML
     private AnchorPane dashboard_form;
 
     @FXML
@@ -244,28 +253,37 @@ public class mainFormController implements Initializable {
     private TableColumn<Fournisseur, String> fournisseur_col_prenom;
     @FXML
     private TableColumn<Fournisseur, String> fournisseur_col_email;
-
     @FXML
     private TableColumn<Fournisseur, String> fournisseur_col_adresse;
     @FXML
     private TableColumn<Fournisseur, Integer> fournisseur_col_phoneNumber;
 
     @FXML
-    Button addButton;
-
+    private Button addButton;
     @FXML
     private Button deleteButton;
-
     @FXML
     private Button updateFournisseurButton;
+    @FXML
+    private TextField searchTextField;
 
     @FXML
-    private ComboBox<Fournisseur> fournisseurComboBox;
+    private TextField searchNomTextField;
+    @FXML
+    private TextField searchPrenomTextField;
+
+    @FXML
+    private TextField nomTextField;
+    @FXML
+    private TextField prenomTextField;
+    @FXML
+    private TextField adresseTextField;
+    @FXML
+    private TextField emailTextField;
+    @FXML
+    private TextField phoneNumberTextField;
 
     private FournisseurService fournisseurService = new FournisseurService();
-
-    @FXML
-    private TextField idTextField, nomTextField, prenomTextField, emailTextField, adresseTextField, phoneNumberTextField;
 
     private Alert alert;
 
@@ -1158,6 +1176,16 @@ public class mainFormController implements Initializable {
 
             stockShowData();
         }
+        else if (event.getSource() == fournisseur_btn) {
+            dashboard_form.setVisible(false);
+            inventory_form.setVisible(false);
+            menu_form.setVisible(false);
+            customers_form.setVisible(false);
+            stock_form.setVisible(false);
+            fournisseurs_form.setVisible(true);
+
+
+        }
 
     }
 // LETS PROCEED TO OUR DASHBOARD FORM : )
@@ -1230,11 +1258,8 @@ public class mainFormController implements Initializable {
         stockShowData();
 
         setupAddButton();
-        try {
-            setupfournisseurComboBox();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+
+        // Configurer les colonnes du TableView
         fournisseur_col_id.setCellValueFactory(new PropertyValueFactory<>("id"));
         fournisseur_col_nom.setCellValueFactory(new PropertyValueFactory<>("nom"));
         fournisseur_col_prenom.setCellValueFactory(new PropertyValueFactory<>("prenom"));
@@ -1242,27 +1267,12 @@ public class mainFormController implements Initializable {
         fournisseur_col_adresse.setCellValueFactory(new PropertyValueFactory<>("adresse"));
         fournisseur_col_phoneNumber.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
 
+        // Rafraîchir la TableView
         refreshTableView();
-                }
 
+        searchButton.setOnAction(e -> handleRechercherFournisseur(null));
 
-    private void setupfournisseurComboBox() throws SQLException {
-        // Get the fournisseurs from the database
-        List<Fournisseur> fournisseurs = fournisseurService.readAll();
-
-        // Create a list of FournisseurItems from the fournisseurs
-        ObservableList<Fournisseur> fournisseurItems = FXCollections.observableArrayList();
-        for (Fournisseur fournisseur : fournisseurs) {
-            Fournisseur item = new Fournisseur(fournisseur.getId(), fournisseur.getNom(), fournisseur.getPrenom(), fournisseur.getEmail(), fournisseur.getAdresse(),fournisseur.getPhonenumber());
-            fournisseurItems.add(item);
-        }
-
-        // Set the items and prompt text for the ComboBox
-        fournisseurComboBox.setItems(fournisseurItems);
-        fournisseurComboBox.setPromptText("Sélectionner un fournisseur");
     }
-
-
 
     //Bouton Ajout fournisseur
 
@@ -1273,46 +1283,66 @@ public class mainFormController implements Initializable {
         });
     }
 
-    private void refreshTableView() {
+
+    @FXML
+    private void handleAddButton(ActionEvent event) {
+        addFournisseurFromInputFields();
+        refreshTableView(); // Rafraîchir la TableView après l'ajout
     }
+
+    @FXML
+    private void handleUpdateFournisseur(ActionEvent event) {
+        Fournisseur selectedFournisseur = fournisseur_tableView.getSelectionModel().getSelectedItem();
+        if (selectedFournisseur != null) {
+            // Ajoutez ici le code pour la mise à jour du fournisseur si nécessaire
+        }
+    }
+
+
+    private void refreshTableView() {
+        try {
+            List<Fournisseur> allFournisseurs = fournisseurService.readAll();
+            fournisseur_tableView.getItems().setAll(allFournisseurs);
+        } catch (SQLException e) {
+            handleException(e);
+        }
+    }
+
+    private void handleException(Exception e) {
+        // Gérer l'exception de manière appropriée, par exemple, afficher un message d'erreur à l'utilisateur
+        e.printStackTrace();
+    }
+
 
     private boolean isValidInput() {
         // Vérifie si les champs sont remplis correctement avant l'ajout
-        return fournisseurComboBox.getValue() != null
-                && !nomTextField.getText().isEmpty()
-                && !prenomTextField.getText().isEmpty();
+        return !nomTextField.getText().isEmpty() && !prenomTextField.getText().isEmpty();
     }
 
-
-    private void resetInputFields() {
-        fournisseurComboBox.getSelectionModel().clearSelection();
+    private void clearInputFields() {
         nomTextField.clear();
         prenomTextField.clear();
+        adresseTextField.clear();
+        emailTextField.clear();
+        phoneNumberTextField.clear();
     }
 
+
+    @FXML
     private void addFournisseurFromInputFields() {
         if (!isValidInput()) {
             // Affichage d'une alerte JavaFX pour indiquer que tous les champs doivent être remplis
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Champs manquants");
-            alert.setHeaderText(null);
-            alert.setContentText("Veuillez remplir tous les champs.");
-            alert.showAndWait();
+            showAlert(Alert.AlertType.ERROR, "Champs manquants", "Veuillez remplir tous les champs.");
             return;
         }
         try {
             // Créer un nouvel objet Fournisseur avec les données de l'interface utilisateur
             Fournisseur newFournisseur = new Fournisseur();
-
-            // Obtenez le fournisseur sélectionné à partir de la ComboBox
-            Fournisseur fournisseurSelectionne = fournisseurComboBox.getSelectionModel().getSelectedItem();
-
-            // Copiez les données du fournisseur sélectionné vers le nouveau fournisseur
-            newFournisseur.setNom(fournisseurSelectionne.getNom());
-            newFournisseur.setPrenom(fournisseurSelectionne.getPrenom());
-            newFournisseur.setAdresse(fournisseurSelectionne.getAdresse());
-            newFournisseur.setEmail(fournisseurSelectionne.getEmail());
-            newFournisseur.setPhonenumber(fournisseurSelectionne.getPhonenumber());
+            newFournisseur.setNom(nomTextField.getText());
+            newFournisseur.setPrenom(prenomTextField.getText());
+            newFournisseur.setAdresse(adresseTextField.getText());
+            newFournisseur.setEmail(emailTextField.getText());
+            newFournisseur.setPhonenumber(Integer.parseInt(phoneNumberTextField.getText()));
 
             // Ajouter le nouveau fournisseur
             fournisseurService.ajouter(newFournisseur);
@@ -1321,24 +1351,21 @@ public class mainFormController implements Initializable {
             refreshTableView();
 
             // Réinitialiser les champs après l'ajout
-            resetInputFields();
+            clearInputFields();
         } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
             // Gérer l'exception (par exemple, afficher un message d'erreur)
         }
     }
 
-    @FXML
-    private void deleteFournisseur(ActionEvent event) {
-        Fournisseur selectedFournissur = fournisseur_tableView.getSelectionModel().getSelectedItem();
 
-        if (selectedFournissur == null) {
-            // Affichage d'une alerte JavaFX pour indiquer qu'un stock doit être sélectionné
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Aucun fournisseur a été sélectionné");
-            alert.setHeaderText(null);
-            alert.setContentText("Veuillez sélectionner un fournisseur à supprimer.");
-            alert.showAndWait();
+    @FXML
+    private void deleteFournisseur() {
+        Fournisseur selectedFournisseur = fournisseur_tableView.getSelectionModel().getSelectedItem();
+
+        if (selectedFournisseur == null) {
+            // Affichage d'une alerte JavaFX pour indiquer qu'un fournisseur doit être sélectionné
+            showAlert(Alert.AlertType.WARNING, "Aucun fournisseur sélectionné", "Veuillez sélectionner un fournisseur à supprimer.");
             return;
         }
 
@@ -1350,7 +1377,7 @@ public class mainFormController implements Initializable {
         Optional<ButtonType> result = confirmAlert.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
             try {
-                fournisseurService.delete(selectedFournissur.getId());
+                fournisseurService.delete(selectedFournisseur.getId());
                 refreshTableView(); // Rafraîchir la TableView après la suppression
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -1359,42 +1386,25 @@ public class mainFormController implements Initializable {
     }
 
     @FXML
-    private void updateFournisseurButton(ActionEvent event) {
+    private void updateFournisseurButton() {
         Fournisseur selectedFournisseur = fournisseur_tableView.getSelectionModel().getSelectedItem();
 
         if (selectedFournisseur == null) {
             // Affichage d'une alerte JavaFX pour indiquer qu'un fournisseur doit être sélectionné
-            Alert alert = new Alert(Alert.AlertType.WARNING);
-            alert.setTitle("Aucun fournisseur a été sélectionné");
-            alert.setHeaderText(null);
-            alert.setContentText("Veuillez sélectionner un fournisseur à modifier.");
-            alert.showAndWait();
+            showAlert(Alert.AlertType.WARNING, "Aucun fournisseur sélectionné", "Veuillez sélectionner un fournisseur à modifier.");
             return;
         }
 
         if (!isValidInput()) {
             // Affichage d'une alerte JavaFX pour indiquer que tous les champs doivent être remplis
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Champs manquants");
-            alert.setHeaderText(null);
-            alert.setContentText("Veuillez remplir tous les champs.");
-            alert.showAndWait();
+            showAlert(Alert.AlertType.ERROR, "Champs manquants", "Veuillez remplir tous les champs.");
             return;
         }
 
         try {
             // Créer un nouvel objet Fournisseur avec les données de l'interface utilisateur
             Fournisseur updatedFournisseur = new Fournisseur();
-
-            // Copiez les données du fournisseur sélectionné vers le nouveau fournisseur
             updatedFournisseur.setId(selectedFournisseur.getId());
-            updatedFournisseur.setNom(selectedFournisseur.getNom());
-            updatedFournisseur.setPrenom(selectedFournisseur.getPrenom());
-            updatedFournisseur.setAdresse(selectedFournisseur.getAdresse());
-            updatedFournisseur.setEmail(selectedFournisseur.getEmail());
-            updatedFournisseur.setPhonenumber(selectedFournisseur.getPhonenumber());
-
-            // Mettre à jour les données du fournisseur avec les nouvelles données de l'interface utilisateur
             updatedFournisseur.setNom(nomTextField.getText());
             updatedFournisseur.setPrenom(prenomTextField.getText());
             updatedFournisseur.setAdresse(adresseTextField.getText());
@@ -1408,33 +1418,32 @@ public class mainFormController implements Initializable {
             refreshTableView();
 
             // Réinitialiser les champs après la modification
-            resetInputFields();
+            clearInputFields();
         } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
             // Gérer l'exception (par exemple, afficher un message d'erreur)
         }
     }
 
-    @FXML
-    private void handleUpdateFournisseur(ActionEvent event) {
-        Fournisseur selectedFournisseur = fournisseur_tableView.getSelectionModel().getSelectedItem();
-        if (selectedFournisseur != null) {
-            // Votre code pour la mise à jour du fournisseur
-        }
+    private void showAlert(Alert.AlertType alertType, String title, String content) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
-
 
     @FXML
     private void handleRechercherFournisseur(ActionEvent event) {
-        String nom = nomTextField.getText();
-        String prenom = prenomTextField.getText();
+        String nom = searchNomTextField.getText();
+        String prenom = searchPrenomTextField.getText();
 
-        if (nom.isEmpty() || prenom.isEmpty()) {
+        if (nom.isEmpty() && prenom.isEmpty()) {
             // Affichage d'une alerte JavaFX pour indiquer que les champs de recherche sont vides
             Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Champs de recherche vides");
             alert.setHeaderText(null);
-            alert.setContentText("Veuillez saisir un nom et un prénom pour effectuer une recherche.");
+            alert.setContentText("Veuillez saisir un nom et/ou un prénom pour effectuer une recherche.");
             alert.showAndWait();
             return;
         }
@@ -1461,32 +1470,25 @@ public class mainFormController implements Initializable {
     }
 
     @FXML
-    private void handleContacterFournisseur(ActionEvent event) {
-        String phoneNumber = phoneNumberTextField.getText();
+    private void handleContacterButton(ActionEvent event) {
+        String fournisseurNom = nomTextField.getText(); // Récupérez le nom du fournisseur
 
         try {
-            FournisseurService fournisseurService = new FournisseurService(); // Initialisez correctement votre service
-            Fournisseur fournisseur = fournisseurService.contacterParPhoneNumber(phoneNumber);
+            List<Integer> phoneNumbers = fournisseurService.getPhoneNumbersByNom(fournisseurNom);
 
-            if (fournisseur != null) {
-                // Afficher les informations du fournisseur dans les champs de saisie
-                nomTextField.setText(fournisseur.getNom());
-                prenomTextField.setText(fournisseur.getPrenom());
-                emailTextField.setText(fournisseur.getEmail());
-                adresseTextField.setText(fournisseur.getAdresse());
+            if (!phoneNumbers.isEmpty()) {
+                // Afficher les numéros de téléphone dans une boîte de dialogue ou tout autre composant
+                String phoneNumbersString = String.join(", ", phoneNumbers.stream().map(Object::toString).collect(Collectors.toList()));
+                showAlert(Alert.AlertType.INFORMATION, "Numéros de téléphone", "Numéros de téléphone : " + phoneNumbersString);
             } else {
-                // Afficher une alerte si le fournisseur n'est pas trouvé
-                Alert alert = new Alert(Alert.AlertType.WARNING);
-                alert.setTitle("Fournisseur non trouvé");
-                alert.setHeaderText(null);
-                alert.setContentText("Aucun fournisseur n'a été trouvé avec le numéro de téléphone : " + phoneNumber);
-                alert.showAndWait();
+                showAlert(Alert.AlertType.INFORMATION, "Aucun numéro de téléphone", "Aucun numéro de téléphone trouvé pour le fournisseur : " + fournisseurNom);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
-            // Gérer l'exception (par exemple, afficher un message d'erreur)
+            handleException(e);
         }
     }
+
+
 
 
 }

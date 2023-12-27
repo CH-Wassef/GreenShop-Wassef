@@ -5,6 +5,7 @@ import esprit.tn.greenshopjavafx.Services.FournisseurService.FournisseurService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Test_Fournisseur {
 
@@ -49,10 +50,11 @@ public class Test_Fournisseur {
             e.printStackTrace();
         }
 
-        // Test de modification
         try {
-            Fournisseur fournisseurAModifier = fournisseurService.consulter("Faouzi","Chargui"); // Remplacez 1 par l'ID réel
-            if (fournisseurAModifier != null) {
+            List<Fournisseur> fournisseurs = fournisseurService.consulter("Faouzi", "Chargui");
+
+            if (!fournisseurs.isEmpty()) {
+                Fournisseur fournisseurAModifier = fournisseurs.get(0);
                 fournisseurAModifier.setNom("NouveauNom");
                 fournisseurService.update(fournisseurAModifier);
                 System.out.println("Fournisseur modifié avec succès.");

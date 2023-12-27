@@ -6,6 +6,7 @@ import esprit.tn.greenshopjavafx.Utils.DataSource;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class FournisseurService implements IService<Fournisseur> {
 
@@ -75,44 +76,25 @@ public class FournisseurService implements IService<Fournisseur> {
         return null;
     }
 
-    public ArrayList<Fournisseur> getAll() throws SQLException {
-        ArrayList<Fournisseur> fournisseurs = new ArrayList<>();
-        try {
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM fournisseur");
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String nom = resultSet.getString("nom");
-                String prenom = resultSet.getString("prenom");
-                String email = resultSet.getString("email");
-                String adresse = resultSet.getString("adresse");
-                int phoneNumber = resultSet.getInt("phonenumber");
-                Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phoneNumber);
-                fournisseurs.add(fournisseur);
+    public List<Fournisseur> consulter(String nom, String prenom) throws SQLException {
+        List<Fournisseur> fournisseurs = new ArrayList<>();
+        String req = "SELECT * FROM fournisseur WHERE nom = ? AND prenom = ?";
+        try (PreparedStatement preparedStatement = connnection.prepareStatement(req)) {
+            preparedStatement.setString(1, nom);
+            preparedStatement.setString(2, prenom);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    int id = resultSet.getInt(1);
+                    String email = resultSet.getString(4);
+                    String adresse = resultSet.getString(5);
+                    int phonenumber = resultSet.getInt(6);
+
+                    Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber);
+                    fournisseurs.add(fournisseur);
+                }
             }
-        } catch (SQLException ex) {
-            System.out.println(ex);
         }
         return fournisseurs;
-    }
-
-    public Fournisseur consulter(String nom, String prenom) throws SQLException {
-        String req = "SELECT * FROM fournisseur WHERE nom = ? AND prenom = ?";
-        PreparedStatement preparedStatement = connnection.prepareStatement(req);
-        preparedStatement.setString(1, nom);
-        preparedStatement.setString(2, prenom);
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        if (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            String email = resultSet.getString(4);
-            String adresse = resultSet.getString(5);
-            int phonenumber = resultSet.getInt(6);
-
-            Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber);
-            return fournisseur;
-        } else {
-            return null;
-        }
     }
 
 
@@ -135,6 +117,21 @@ public class FournisseurService implements IService<Fournisseur> {
         } else {
             return null;
         }
+    }
+
+    public List<Integer> getPhoneNumbersByNom(String nom) throws SQLException {
+        List<Integer> phoneNumbers = new ArrayList<>();
+        String req = "SELECT phoneNumber FROM fournisseur WHERE nom = ?";
+        PreparedStatement preparedStatement = connnection.prepareStatement(req);
+        preparedStatement.setString(1, nom);
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        while (resultSet.next()) {
+            int phoneNumber = resultSet.getInt(1);
+            phoneNumbers.add(phoneNumber);
+        }
+
+        return phoneNumbers;
     }
 }
 
