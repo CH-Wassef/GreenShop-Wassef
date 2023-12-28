@@ -1,7 +1,9 @@
 package esprit.tn.greenshopjavafx.Services.FournisseurService;
 
 import esprit.tn.greenshopjavafx.Entities.Fournisseur.Fournisseur;
+import esprit.tn.greenshopjavafx.Entities.Produit.Produit;
 import esprit.tn.greenshopjavafx.Services.IService;
+import esprit.tn.greenshopjavafx.Services.ProduitService.ProduitService;
 import esprit.tn.greenshopjavafx.Utils.DataSource;
 
 import java.sql.*;
@@ -12,6 +14,7 @@ public class FournisseurService implements IService<Fournisseur> {
 
     private Connection connnection = DataSource.getInstance().getCon();
     private Statement statement;
+     ProduitService produitService = new ProduitService();
 
     public FournisseurService() {
         try {
@@ -22,8 +25,8 @@ public class FournisseurService implements IService<Fournisseur> {
     }
     @Override
     public  void ajouter(Fournisseur fournisseur) throws SQLException {
-        String query = "INSERT INTO fournisseur (nom, prenom, email, adresse, phonenumber) VALUES ('"
-                + fournisseur.getNom() + "', '" + fournisseur.getPrenom() + "', '" + fournisseur.getEmail()
+        String query = "INSERT INTO fournisseur (nom, prenom, email,idProduit, adresse, phonenumber) VALUES ('"
+                + fournisseur.getNom() + "', '" + fournisseur.getPrenom() + "', '" + fournisseur.getEmail()+ fournisseur.getProduit().getId() + "', idProduit = '"
                 + "', '" + fournisseur.getAdresse() + "', '" + fournisseur.getPhonenumber() + "')";
         int res = statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
 
@@ -39,9 +42,14 @@ public class FournisseurService implements IService<Fournisseur> {
 
     @Override
     public void update(Fournisseur fournisseur) throws SQLException {
-        String req = "UPDATE fournisseur SET nom = '" + fournisseur.getNom() + "', prenom = '"
-                + fournisseur.getPrenom() + "', email = '" + fournisseur.getEmail() + "', adresse = '" + fournisseur.getAdresse() +"', phonenumber = '" + fournisseur.getPhonenumber() + "' WHERE id = "
-                + fournisseur.getId();
+        String req = "UPDATE fournisseur SET " +
+                "nom = '" + fournisseur.getNom() + "', " +
+                "prenom = '" + fournisseur.getPrenom() + "', " +
+                "idProduit = '" + fournisseur.getProduit().getId() + "', " +
+                "email = '" + fournisseur.getEmail() + "', " +
+                "adresse = '" + fournisseur.getAdresse() + "', " +
+                "phonenumber = '" + fournisseur.getPhonenumber() + "' " +
+                "WHERE id = " + fournisseur.getId();
         int res = statement.executeUpdate(req);
     }
 
@@ -63,7 +71,10 @@ public class FournisseurService implements IService<Fournisseur> {
                 String email = resultSet.getString(4);
                 String adresse = resultSet.getString(5);
                 int phonenumber = resultSet.getInt(6);
-                fournisseurs.add(new Fournisseur(id, nom, prenom, email, adresse,phonenumber));
+                int idProduit = resultSet.getInt(7);
+                Produit p= produitService.get(idProduit);
+
+                fournisseurs.add(new Fournisseur(id, nom, prenom, email, adresse,phonenumber,p));
             }
         } catch (SQLException ex) {
             System.out.println(ex);
@@ -88,8 +99,11 @@ public class FournisseurService implements IService<Fournisseur> {
                     String email = resultSet.getString(4);
                     String adresse = resultSet.getString(5);
                     int phonenumber = resultSet.getInt(6);
+                    int idProduit = resultSet.getInt(7);
+                    Produit p= produitService.get(idProduit);
 
-                    Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber);
+
+                    Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber,p);
                     fournisseurs.add(fournisseur);
                 }
             }
@@ -111,8 +125,12 @@ public class FournisseurService implements IService<Fournisseur> {
             String email = resultSet.getString(4);
             String adresse = resultSet.getString(5);
             int phonenumber = resultSet.getInt(6);
+            int idProduit = resultSet.getInt(7);
+            Produit p= produitService.get(idProduit);
 
-            Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber);
+
+
+            Fournisseur fournisseur = new Fournisseur(id, nom, prenom, email, adresse, phonenumber,p);
             return fournisseur;
         } else {
             return null;
